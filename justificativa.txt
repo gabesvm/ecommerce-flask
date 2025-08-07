@@ -1,0 +1,20 @@
+JUSTIFICATIVA – TRILHA 1 – AULA 03
+
+Para realizar essa atividade, iniciei a estrutura de um projeto web utilizando o framework Flask, conforme orientado nas aulas.
+
+1. Entidades e Relacionamentos (MER)
+Baseado nas funcionalidades propostas para o sistema de e-commerce, identifiquei as principais entidades: Usuário, Anúncio, Pergunta, Compra e Categoria. Cada entidade possui atributos essenciais para seu funcionamento. Por exemplo, o Usuário possui ID e nome; o Anúncio possui ID e descrição; e a Compra possui relação com o usuário e o anúncio, representando a transação.
+
+2. Menu de Navegação
+Elaborei um diagrama de navegação que representa visualmente o fluxo entre as páginas. A página inicial contém os principais links para cadastro de usuário, anúncio, pergunta, compra e categoria, além de links para os relatórios. Isso permite fácil acesso às funcionalidades do sistema.
+
+3. Estrutura em Flask
+Implementei o backend utilizando o Flask com rotas organizadas. Cada funcionalidade possui uma rota separada, conectada a arquivos HTML (templates) que representam cada tela. Toda a estrutura foi feita seguindo as boas práticas apresentadas em aula, com separação de lógica, uso do `render_template` e métodos GET e POST nos formulários.
+
+4. Decisões Baseadas nas Aulas
+Todas as decisões foram tomadas com base no conteúdo apresentado durante as aulas da Trilha 1. O uso do `url_for`, separação de templates e a forma de tratar formulários seguem diretamente os exemplos vistos em aula. Também utilizei o terminal do VSCode e o PowerShell para ativar o ambiente virtual, definir variáveis e rodar o projeto localmente.
+
+5. Organização e Publicação
+O projeto foi estruturado com clareza, com pastas separadas para `templates` e com o ambiente virtual dentro da pasta `venv`. Também será publicado em um repositório público no GitHub, conforme exigido.
+
+Aluno: Gabriel Steven

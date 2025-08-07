@@ -1,0 +1,10 @@
+<h1>Realizar Compra</h1>
+<form method="post" action="{{ url_for('compra') }}">
+  <p><label>ID do Anúncio:</label></p>
+  <p><input type="text" name="id_anuncio"></p>
+  
+  <p><label>ID do Comprador:</label></p>
+  <p><input type="text" name="id_usuario"></p>
+  
+  <p><input type="submit" value="Comprar"></p>
+</form>
