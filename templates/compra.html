@@ -1,10 +1,13 @@
 <h1>Realizar Compra</h1>
 <form method="post" action="{{ url_for('compra') }}">
   <p><label>ID do Anúncio:</label></p>
-  <p><input type="text" name="id_anuncio"></p>
-  
+  <p><input type="number" name="anuncio_id" min="1" required></p>
+
   <p><label>ID do Comprador:</label></p>
-  <p><input type="text" name="id_usuario"></p>
-  
+  <p><input type="number" name="usuario_id" min="1" required></p>
+
+  <p><label>Quantidade:</label></p>
+  <p><input type="number" name="quantidade" value="1" min="1"></p>
+
   <p><input type="submit" value="Comprar"></p>
 </form>

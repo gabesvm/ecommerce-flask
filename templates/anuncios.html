@@ -1,13 +1,20 @@
 <h1>Cadastro de Anúncio</h1>
-<form>
-    <p><label>Título:</label></p>
-    <p><input type="text" name="titulo"></p>
+<form method="post" action="{{ url_for('anuncios') }}">
+  <p><label>Título:</label></p>
+  <p><input type="text" name="titulo" required></p>
 
-    <p><label>Descrição:</label></p>
-    <p><textarea name="descricao"></textarea></p>
+  <p><label>Descrição:</label></p>
+  <p><textarea name="descricao"></textarea></p>
 
-    <p><label>Valor:</label></p>
-    <p><input type="number" name="valor"></p>
+  <p><label>Valor:</label></p>
+  <p><input type="number" name="valor" step="0.01" min="0" required></p>
 
-    <p><input type="submit" value="Cadastrar Anúncio"></p>
+  <p><label>ID da Categoria:</label></p>
+  <p><input type="number" name="categoria_id" min="1" required></p>
+
+  <p><label>ID do Usuário:</label></p>
+  <p><input type="number" name="usuario_id" min="1" required></p>
+
+  <p><input type="submit" value="Cadastrar Anúncio"></p>
 </form>
+

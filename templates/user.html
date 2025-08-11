@@ -8,16 +8,17 @@
 <body>
     <h1>{{titulo}}</h1>
     <form action="{{ url_for('caduser') }}" method="post">
-        <p><label for="user">Username</label></p>
-        <p><input type="text" id="user" name="user"></p>
+        <p><label for="nome">Nome</label></p>
+        <p><input type="text" id="nome" name="nome" required></p>
 
         <p><label for="email">E-mail</label></p>
-        <p><input type="text" id="email" name="email"></p>
+        <p><input type="email" id="email" name="email" required></p>
 
-        <p><label for="passwd">Password</label></p>
-        <p><input type="password" id="passwd" name="passwd"></p>
+        <p><label for="senha">Senha</label></p>
+        <p><input type="password" id="senha" name="senha" required></p>
 
         <p><input type="submit" value="Cadastrar"></p>
-    </form>
+</form>
+
 </body>
 </html>
