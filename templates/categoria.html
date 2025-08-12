@@ -1,7 +1,37 @@
-<h1>Cadastro de Categoria</h1>
-<form method="post" action="{{ url_for('categoria') }}">
-  <p><label>Nome da Categoria:</label></p>
-  <p><input type="text" name="nome_categoria" required></p>
+<!doctype html>
+<html>
+<head> 
+    <meta charset="utf-8">
+    <title>ecommerce - Cadastro de {{ titulo }}</title>
+</head>
+<body>
+    <h4>Cadastro de {{ titulo }}</h4>
+    <form action="/categoria/novo" method="post">
+        <p><label for="nome">Nome</label>
+        <input type="text" id="nome" name="nome"></p>
 
-  <p><input type="submit" value="Cadastrar"></p>
-</form>
+        <p><label for="desc">Descrição</label>
+        <input type="text" id="desc" name="desc"></p>
+
+        <p><input type="submit" value="Cadastrar"></p>
+    </form>
+
+    <h4>Lista de {{ titulo }}</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for categoria in categorias %}
+                <tr>
+                    <td>{{ categoria.nome }}</td>
+                    <td>{{ categoria.desc }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

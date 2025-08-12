@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from decimal import Decimal
 
@@ -86,18 +86,21 @@ def index():
     return render_template('index.html')
 
 
+# ----------- USUÁRIO -----------
 @app.route("/cad/usuario")
 def usuario():
     usuarios = Usuario.query.order_by(Usuario.id.desc()).all()
-    return render_template('user.html', titulo="Cadastro de Usuário", usuarios=usuarios)
+    # Template do teu projeto é user.html
+    return render_template('user.html', titulo="Usuário", usuarios=usuarios)
 
-
-
-@app.route("/cad/caduser", methods=["POST"])
-def caduser():
-    nome  = request.form.get("nome")
+# Troquei o endpoint para o que o template usa: /usuario/criar
+@app.route("/usuario/criar", methods=["POST"])
+def criarusuario():
+    # aceita tanto (user/email/passwd/end) quanto (nome/email/senha) para não quebrar
+    nome  = request.form.get("user")  or request.form.get("nome")
     email = request.form.get("email")
-    senha = request.form.get("senha")
+    senha = request.form.get("passwd") or request.form.get("senha")
+    end   = request.form.get("end")    # opcional no teu model
 
     if not (nome and email and senha):
         return "Preencha nome, email e senha.", 400
@@ -106,43 +109,111 @@ def caduser():
         u = Usuario(nome=nome, email=email, senha=senha)
         db.session.add(u)
         db.session.commit()
-        return "Usuário cadastrado com sucesso!"
+        return redirect(url_for("usuario"))
     except Exception as e:
         db.session.rollback()
         return f"Erro ao cadastrar usuário: {e}", 500
 
+@app.route("/usuario/detalhar/<int:id>")
+def buscarusuario(id):
+    u = Usuario.query.get_or_404(id)
+    return u.nome
 
+@app.route("/usuario/editar/<int:id>", methods=["GET", "POST"])
+def editarusuario(id):
+    u = Usuario.query.get_or_404(id)
+    if request.method == "POST":
+        u.nome  = request.form.get("user")  or request.form.get("nome")  or u.nome
+        u.email = request.form.get("email") or u.email
+        u.senha = request.form.get("passwd") or request.form.get("senha") or u.senha
+        db.session.commit()
+        return redirect(url_for("usuario"))
+    return render_template("eusuario.html", usuario=u, titulo="Usuário")
+
+@app.route("/usuario/deletar/<int:id>")
+def deletarusuario(id):
+    u = Usuario.query.get_or_404(id)
+    db.session.delete(u)
+    db.session.commit()
+    return redirect(url_for("usuario"))
+
+
+# ----------- CATEGORIA -----------
+@app.route("/config/categoria", methods=["GET", "POST"])
+def categoria():
+    if request.method == "POST":
+        # aceita nome_categoria (teu) ou nome (do professor)
+        nome_categoria = request.form.get("nome_categoria") or request.form.get("nome")
+        if not nome_categoria:
+            return "Informe o nome da categoria.", 400
+        try:
+            cat = Categoria(nome=nome_categoria)
+            db.session.add(cat)
+            db.session.commit()
+            return redirect(url_for("categoria"))
+        except Exception as e:
+            db.session.rollback()
+            return f"Erro ao cadastrar categoria: {e}", 500
+
+    categorias = Categoria.query.order_by(Categoria.id.desc()).all()
+    return render_template("categoria.html", categorias=categorias, titulo="Categoria")
+
+# Caso use o caminho do professor em algum template:
+@app.route("/categoria/novo", methods=["POST"])
+def novacategoria():
+    nome_categoria = request.form.get("nome") or request.form.get("nome_categoria")
+    if not nome_categoria:
+        return "Informe o nome da categoria.", 400
+    try:
+        cat = Categoria(nome=nome_categoria)
+        db.session.add(cat)
+        db.session.commit()
+        return redirect(url_for("categoria"))
+    except Exception as e:
+        db.session.rollback()
+        return f"Erro ao cadastrar categoria: {e}", 500
+
+
+# ----------- ANÚNCIO -----------
+# No teu projeto a rota era /cad/anuncios
 @app.route("/cad/anuncios", methods=["GET", "POST"])
 def anuncios():
     if request.method == "POST":
-        titulo       = request.form.get("titulo")
-        descricao    = request.form.get("descricao")
-        valor_str    = request.form.get("valor")
-        categoria_id = request.form.get("categoria_id")
-        usuario_id   = request.form.get("usuario_id")
+        # aceita nomes do professor OU do teu template
+        titulo       = request.form.get("titulo")    or request.form.get("nome")
+        descricao    = request.form.get("descricao") or request.form.get("desc")
+        valor_str    = request.form.get("valor")     or request.form.get("preco")
+        categoria_id = request.form.get("categoria_id") or request.form.get("cat")
+        usuario_id   = request.form.get("usuario_id")   or request.form.get("uso")
+        qtd_str      = request.form.get("quantidade")   or request.form.get("qtd") or "0"
 
         if not (titulo and valor_str and categoria_id and usuario_id):
-            return "Preencha título, valor, categoria_id e usuario_id.", 400
+            return "Preencha título/nome, preço/valor, categoria e usuário.", 400
 
         try:
-            valor = Decimal(valor_str.replace(",", "."))  # aceita 99,90 ou 99.90
+            valor = Decimal((valor_str or "0").replace(",", "."))  # aceita 99,90 ou 99.90
             a = Anuncio(
                 titulo=titulo,
                 descricao=descricao,
                 preco=valor,
                 categoria_id=int(categoria_id),
-                usuario_id=int(usuario_id)
+                usuario_id=int(usuario_id),
             )
+            # Se você quiser salvar quantidade em outro lugar, ajuste o model.
             db.session.add(a)
             db.session.commit()
-            return "Anúncio cadastrado com sucesso!"
+            return redirect(url_for("anuncios"))
         except Exception as e:
             db.session.rollback()
             return f"Erro ao cadastrar anúncio: {e}", 500
 
-    return render_template('anuncios.html')
+    # GET: precisa passar categorias e anúncios para o template 'anuncios.html'
+    lista_anuncios = Anuncio.query.order_by(Anuncio.id.desc()).all()
+    categorias = Categoria.query.order_by(Categoria.nome.asc()).all()
+    return render_template('anuncios.html', titulo="Anúncio", anuncios=lista_anuncios, categorias=categorias)
 
 
+# ----------- PERGUNTA / COMPRA / FAVORITOS -----------
 @app.route("/anuncios/pergunta", methods=["GET", "POST"])
 def pergunta():
     if request.method == "POST":
@@ -201,33 +272,13 @@ def compra():
 
 @app.route("/anuncios/favoritos")
 def favoritos():
-    # Exemplo: rota simples/placeholder
     return "<h4>Favorito inserido</h4>"
 
 
-@app.route("/config/categoria", methods=["GET", "POST"])
-def categoria():
-    if request.method == "POST":
-        nome_categoria = request.form.get("nome_categoria")
-        if not nome_categoria:
-            return "Informe o nome da categoria.", 400
-
-        try:
-            cat = Categoria(nome=nome_categoria)
-            db.session.add(cat)
-            db.session.commit()
-            return "Categoria cadastrada com sucesso!"
-        except Exception as e:
-            db.session.rollback()
-            return f"Erro ao cadastrar categoria: {e}", 500
-
-    return render_template("categoria.html")
-
-
+# ----------- RELATÓRIOS -----------
 @app.route("/relatorios/vendas")
 def relVendas():
     return render_template('relVendas.html')
-
 
 @app.route("/relatorios/compras")
 def relCompras():
@@ -236,6 +287,5 @@ def relCompras():
 
 # Para rodar direto com: python ecommerce.py
 if __name__ == "__main__":
-    db.create_all()  # cria as tabelas no banco
-    app.run(debug=True)  # executa o servidor em modo debug
-
+    db.create_all()
+    app.run(debug=True)

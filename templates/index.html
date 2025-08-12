@@ -1,21 +1,18 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ecommerce</title>
+<!doctype html>
+<html>
+<head> 
+    <meta charset="utf-8">
+    <title>ecommerce - Início</title>
 </head>
 <body>
-    <h1>Bem vindo ao ecommerce</h1>
+    <h4>Bem-vindo ao ecommerce</h4>
 
-    <p><a href="{{ url_for('usuario') }}">Cadastro Usuário</a></p>
-    <p><a href="{{ url_for('anuncios') }}">Cadastro Anúncio</a></p>
-    <p><a href="{{ url_for('pergunta') }}">Fazer Pergunta</a></p>
-    <p><a href="{{ url_for('compra') }}">Comprar Anúncio</a></p>
-    <p><a href="{{ url_for('favoritos') }}">Favoritar Anúncio</a></p>
-    <p><a href="{{ url_for('categoria') }}">Cadastro de Categoria</a></p>
+    <p><a href="{{ url_for('usuario') }}">Cadastro de Usuário</a></p>
+    <p><a href="{{ url_for('anuncios') }}"> Cadastro de Anúncio</a></p>
+    <p><a href="{{ url_for('categoria') }}">Configurar Categoria</a></p>
+
+    <hr>
     <p><a href="{{ url_for('relVendas') }}">Relatório de Vendas</a></p>
     <p><a href="{{ url_for('relCompras') }}">Relatório de Compras</a></p>
-
 </body>
 </html>

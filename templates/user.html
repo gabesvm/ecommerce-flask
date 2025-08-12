@@ -1,24 +1,51 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ecommerce - {{titulo}}</title>
+<!doctype html>
+<html>
+<head> 
+    <meta charset="utf-8">
+    <title>ecommerce - Cadastro de {{ titulo }}</title>
 </head>
 <body>
-    <h1>{{titulo}}</h1>
-    <form action="{{ url_for('caduser') }}" method="post">
-        <p><label for="nome">Nome</label></p>
-        <p><input type="text" id="nome" name="nome" required></p>
+    <h4>Cadastro de {{ titulo }}</h4>
+    <form action="/usuario/criar" method="post">
+        <p><label for="user">Username</label>
+        <input type="text" id="user" name="user"></p>
 
-        <p><label for="email">E-mail</label></p>
-        <p><input type="email" id="email" name="email" required></p>
+        <p><label for="email">E-mail</label>
+        <input type="text" id="email" name="email"></p>
 
-        <p><label for="senha">Senha</label></p>
-        <p><input type="password" id="senha" name="senha" required></p>
+        <p><label for="passwd">Password</label>
+        <input type="text" id="passwd" name="passwd"></p>
+
+        <p><label for="end">Endereço</label>
+        <input type="text" id="end" name="end"></p>
 
         <p><input type="submit" value="Cadastrar"></p>
-</form>
+    </form>
 
+    <h4>Lista de {{ titulo }}</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Senha</th>
+                <th>Endereço</th>
+                <th>Editar</th>
+                <th>Deletar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.nome }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td>{{ usuario.senha }}</td>
+                    <td>{{ usuario.end }}</td>
+                    <td><a href="{{ url_for('editarusuario', id=usuario.id) }}">Editar?</a></td>
+                    <td><a href="{{ url_for('deletarusuario', id=usuario.id) }}">Deletar?</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>
