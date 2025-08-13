@@ -1,18 +1,13 @@
-<!doctype html>
-<html>
-<head> 
-    <meta charset="utf-8">
-    <title>ecommerce - Início</title>
-</head>
-<body>
-    <h4>Bem-vindo ao ecommerce</h4>
-
-    <p><a href="{{ url_for('usuario') }}">Cadastro de Usuário</a></p>
-    <p><a href="{{ url_for('anuncios') }}"> Cadastro de Anúncio</a></p>
-    <p><a href="{{ url_for('categoria') }}">Configurar Categoria</a></p>
-
-    <hr>
-    <p><a href="{{ url_for('relVendas') }}">Relatório de Vendas</a></p>
-    <p><a href="{{ url_for('relCompras') }}">Relatório de Compras</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Início · E-commerce{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Bem-vindo 👋</h1>
+    <p class="helper">Use o menu para navegar: cadastre usuários, categorias e anúncios.</p>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <a class="btn" href="{{ url_for('usuario') }}">Ir para Usuários</a>
+      <a class="btn" href="{{ url_for('anuncios') }}">Ir para Anúncios</a>
+      <a class="btn" href="{{ url_for('categoria') }}">Ir para Categorias</a>
+    </div>
+  </div>
+{% endblock %}

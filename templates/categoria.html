@@ -1,37 +1,37 @@
-<!doctype html>
-<html>
-<head> 
-    <meta charset="utf-8">
-    <title>ecommerce - Cadastro de {{ titulo }}</title>
-</head>
-<body>
-    <h4>Cadastro de {{ titulo }}</h4>
-    <form action="/categoria/novo" method="post">
-        <p><label for="nome">Nome</label>
-        <input type="text" id="nome" name="nome"></p>
+{% extends "base.html" %}
+{% block title %}Categorias · E-commerce{% endblock %}
+{% block content %}
 
-        <p><label for="desc">Descrição</label>
-        <input type="text" id="desc" name="desc"></p>
+  {% with msgs = get_flashed_messages() %}
+    {% if msgs %}
+      <div class="card" role="alert">
+        {% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
-        <p><input type="submit" value="Cadastrar"></p>
+  <div class="card">
+    <h1>Cadastro de Categoria</h1>
+    <form action="/config/categoria" method="post" class="form-grid">
+      <div class="full">
+        <label for="nome">Nome</label>
+        <input type="text" id="nome" name="nome" required>
+      </div>
+      <div class="full">
+        <button type="submit">Cadastrar</button>
+      </div>
     </form>
+  </div>
 
-    <h4>Lista de {{ titulo }}</h4>
-    <table>
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for categoria in categorias %}
-                <tr>
-                    <td>{{ categoria.nome }}</td>
-                    <td>{{ categoria.desc }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+  <div class="card">
+    <h2>Lista de Categorias</h2>
+    <table class="table">
+      <thead><tr><th>Nome</th></tr></thead>
+      <tbody>
+        {% for categoria in categorias %}
+          <tr><td>{{ categoria.nome }}</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
-</body>
-</html>
+  </div>
+{% endblock %}

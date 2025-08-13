@@ -1,0 +1,45 @@
+:root {
+  --bg: #0b0f1a;
+  --card: #12192b;
+  --muted: #9aa4b2;
+  --text: #e6edf3;
+  --primary: #4ea1ff;
+  --primary-contrast: #0b1b2b;
+  --border: #22314a;
+  --success: #2ecc71;
+  --danger: #ff5c5c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background: linear-gradient(180deg, var(--bg), #0c1426 60%, #0f1a33 100%);
+  color: var(--text); min-height: 100vh;
+}
+.container { max-width: 980px; margin: 24px auto 80px; padding: 0 16px; }
+nav { position: sticky; top: 0; backdrop-filter: blur(6px);
+  background: rgba(12, 20, 38, 0.75); border-bottom: 1px solid var(--border); z-index: 20; }
+nav .wrap { max-width: 980px; margin: 0 auto; padding: 10px 16px;
+  display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+nav a.brand { font-weight: 700; text-decoration: none; color: var(--text); }
+nav ul { list-style: none; display: flex; gap: 14px; padding: 0; margin: 0; }
+nav ul a { color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 10px; }
+nav ul a:hover, nav ul a.active { color: var(--text); background: var(--card); border: 1px solid var(--border); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.15); margin-bottom: 18px; }
+h1,h2,h3 { margin: 0 0 12px; } h1 { font-size: 28px; } h2 { font-size: 22px; color: var(--muted); font-weight: 600; }
+.form-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.form-grid .full { grid-column: 1 / -1; }
+label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
+input, textarea, select { width: 100%; background: #0d1528; color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; }
+textarea { min-height: 110px; resize: vertical; }
+button, .btn { appearance: none; border: 0; background: var(--primary); color: var(--primary-contrast);
+  font-weight: 700; padding: 10px 14px; border-radius: 12px; cursor: pointer; }
+.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn.danger { background: var(--danger); color: #1a0b0b; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); }
+.table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.table thead th { background: #0d1528; text-align: left; color: var(--muted); }
+.table tbody tr:hover { background: rgba(78,161,255,.06); }
+.helper { color: var(--muted); font-size: 13px; }

@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
 
 app = Flask(__name__)
+app.secret_key = "dev-secret-change-me"  # necessário para flash()
 
 # Ajuste sua conexão aqui se mudar usuário/senha/porta/banco
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:150874bb11@localhost:3306/ecommerce'
@@ -90,29 +92,38 @@ def index():
 @app.route("/cad/usuario")
 def usuario():
     usuarios = Usuario.query.order_by(Usuario.id.desc()).all()
-    # Template do teu projeto é user.html
     return render_template('user.html', titulo="Usuário", usuarios=usuarios)
 
-# Troquei o endpoint para o que o template usa: /usuario/criar
 @app.route("/usuario/criar", methods=["POST"])
 def criarusuario():
-    # aceita tanto (user/email/passwd/end) quanto (nome/email/senha) para não quebrar
-    nome  = request.form.get("user")  or request.form.get("nome")
+    # aceita tanto (user/email/passwd) quanto (nome/email/senha)
+    nome  = request.form.get("user")   or request.form.get("nome")
     email = request.form.get("email")
     senha = request.form.get("passwd") or request.form.get("senha")
-    end   = request.form.get("end")    # opcional no teu model
 
     if not (nome and email and senha):
-        return "Preencha nome, email e senha.", 400
+        flash("Preencha nome, e-mail e senha.")
+        return redirect(url_for("usuario"))
+
+    # e-mail único
+    if Usuario.query.filter_by(email=email).first():
+        flash("Este e-mail já está cadastrado. Use outro ou edite o usuário existente.")
+        return redirect(url_for("usuario"))
 
     try:
         u = Usuario(nome=nome, email=email, senha=senha)
         db.session.add(u)
         db.session.commit()
+        flash("Usuário cadastrado com sucesso!")
+        return redirect(url_for("usuario"))
+    except IntegrityError:
+        db.session.rollback()
+        flash("E-mail já cadastrado. Por favor, use outro e-mail.")
         return redirect(url_for("usuario"))
     except Exception as e:
         db.session.rollback()
-        return f"Erro ao cadastrar usuário: {e}", 500
+        flash(f"Erro inesperado ao cadastrar usuário: {e}")
+        return redirect(url_for("usuario"))
 
 @app.route("/usuario/detalhar/<int:id>")
 def buscarusuario(id):
@@ -123,18 +134,47 @@ def buscarusuario(id):
 def editarusuario(id):
     u = Usuario.query.get_or_404(id)
     if request.method == "POST":
-        u.nome  = request.form.get("user")  or request.form.get("nome")  or u.nome
-        u.email = request.form.get("email") or u.email
-        u.senha = request.form.get("passwd") or request.form.get("senha") or u.senha
-        db.session.commit()
-        return redirect(url_for("usuario"))
+        novo_nome  = request.form.get("user")   or request.form.get("nome")
+        novo_email = request.form.get("email")
+        nova_senha = request.form.get("passwd") or request.form.get("senha")
+
+        if not (novo_nome and novo_email and nova_senha):
+            flash("Preencha nome, e-mail e senha.")
+            return redirect(url_for("editarusuario", id=id))
+
+        # se trocar e-mail, checar unicidade
+        if novo_email != u.email and Usuario.query.filter_by(email=novo_email).first():
+            flash("Este e-mail já está em uso por outro usuário.")
+            return redirect(url_for("editarusuario", id=id))
+
+        try:
+            u.nome = novo_nome
+            u.email = novo_email
+            u.senha = nova_senha
+            db.session.commit()
+            flash("Usuário atualizado!")
+            return redirect(url_for("usuario"))
+        except IntegrityError:
+            db.session.rollback()
+            flash("E-mail já cadastrado. Por favor, use outro e-mail.")
+            return redirect(url_for("editarusuario", id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar usuário: {e}")
+            return redirect(url_for("editarusuario", id=id))
+
     return render_template("eusuario.html", usuario=u, titulo="Usuário")
 
 @app.route("/usuario/deletar/<int:id>")
 def deletarusuario(id):
     u = Usuario.query.get_or_404(id)
-    db.session.delete(u)
-    db.session.commit()
+    try:
+        db.session.delete(u)
+        db.session.commit()
+        flash("Usuário deletado.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao deletar usuário: {e}")
     return redirect(url_for("usuario"))
 
 
@@ -142,40 +182,60 @@ def deletarusuario(id):
 @app.route("/config/categoria", methods=["GET", "POST"])
 def categoria():
     if request.method == "POST":
-        # aceita nome_categoria (teu) ou nome (do professor)
-        nome_categoria = request.form.get("nome_categoria") or request.form.get("nome")
+        nome_categoria = request.form.get("nome") or request.form.get("nome_categoria")
         if not nome_categoria:
-            return "Informe o nome da categoria.", 400
+            flash("Informe o nome da categoria.")
+            return redirect(url_for("categoria"))
+
+        if Categoria.query.filter_by(nome=nome_categoria).first():
+            flash("Categoria já existe.")
+            return redirect(url_for("categoria"))
+
         try:
             cat = Categoria(nome=nome_categoria)
             db.session.add(cat)
             db.session.commit()
+            flash("Categoria cadastrada com sucesso!")
+            return redirect(url_for("categoria"))
+        except IntegrityError:
+            db.session.rollback()
+            flash("Categoria já existe.")
             return redirect(url_for("categoria"))
         except Exception as e:
             db.session.rollback()
-            return f"Erro ao cadastrar categoria: {e}", 500
+            flash(f"Erro ao cadastrar categoria: {e}")
+            return redirect(url_for("categoria"))
 
     categorias = Categoria.query.order_by(Categoria.id.desc()).all()
     return render_template("categoria.html", categorias=categorias, titulo="Categoria")
 
-# Caso use o caminho do professor em algum template:
+# rota compatível com o caminho do professor (se usar em algum template)
 @app.route("/categoria/novo", methods=["POST"])
 def novacategoria():
     nome_categoria = request.form.get("nome") or request.form.get("nome_categoria")
     if not nome_categoria:
-        return "Informe o nome da categoria.", 400
+        flash("Informe o nome da categoria.")
+        return redirect(url_for("categoria"))
     try:
+        if Categoria.query.filter_by(nome=nome_categoria).first():
+            flash("Categoria já existe.")
+            return redirect(url_for("categoria"))
         cat = Categoria(nome=nome_categoria)
         db.session.add(cat)
         db.session.commit()
+        flash("Categoria cadastrada com sucesso!")
+        return redirect(url_for("categoria"))
+    except IntegrityError:
+        db.session.rollback()
+        flash("Categoria já existe.")
         return redirect(url_for("categoria"))
     except Exception as e:
         db.session.rollback()
-        return f"Erro ao cadastrar categoria: {e}", 500
+        flash(f"Erro ao cadastrar categoria: {e}")
+        return redirect(url_for("categoria"))
 
 
 # ----------- ANÚNCIO -----------
-# No teu projeto a rota era /cad/anuncios
 @app.route("/cad/anuncios", methods=["GET", "POST"])
 def anuncios():
     if request.method == "POST":
@@ -185,32 +245,57 @@ def anuncios():
         valor_str    = request.form.get("valor")     or request.form.get("preco")
         categoria_id = request.form.get("categoria_id") or request.form.get("cat")
         usuario_id   = request.form.get("usuario_id")   or request.form.get("uso")
-        qtd_str      = request.form.get("quantidade")   or request.form.get("qtd") or "0"
 
         if not (titulo and valor_str and categoria_id and usuario_id):
-            return "Preencha título/nome, preço/valor, categoria e usuário.", 400
+            flash("Preencha título/nome, preço/valor, categoria e usuário.")
+            return redirect(url_for("anuncios"))
+
+        # preço
+        try:
+            valor = Decimal((valor_str or "0").replace(",", "."))
+        except:
+            flash("Preço inválido.")
+            return redirect(url_for("anuncios"))
+
+        # valida FK: categoria e usuário precisam existir
+        categoria = Categoria.query.get(int(categoria_id))
+        if not categoria:
+            flash("Categoria não encontrada. Selecione uma categoria válida.")
+            return redirect(url_for("anuncios"))
+
+        usuario = Usuario.query.get(int(usuario_id))
+        if not usuario:
+            flash("Usuário não encontrado. Selecione um usuário válido.")
+            return redirect(url_for("anuncios"))
 
         try:
-            valor = Decimal((valor_str or "0").replace(",", "."))  # aceita 99,90 ou 99.90
             a = Anuncio(
                 titulo=titulo,
                 descricao=descricao,
                 preco=valor,
-                categoria_id=int(categoria_id),
-                usuario_id=int(usuario_id),
+                categoria_id=categoria.id,
+                usuario_id=usuario.id,
             )
-            # Se você quiser salvar quantidade em outro lugar, ajuste o model.
             db.session.add(a)
             db.session.commit()
+            flash("Anúncio cadastrado com sucesso!")
             return redirect(url_for("anuncios"))
         except Exception as e:
             db.session.rollback()
-            return f"Erro ao cadastrar anúncio: {e}", 500
+            flash(f"Erro ao cadastrar anúncio: {e}")
+            return redirect(url_for("anuncios"))
 
-    # GET: precisa passar categorias e anúncios para o template 'anuncios.html'
+    # GET: carregar anúncios + listas para os selects
     lista_anuncios = Anuncio.query.order_by(Anuncio.id.desc()).all()
     categorias = Categoria.query.order_by(Categoria.nome.asc()).all()
-    return render_template('anuncios.html', titulo="Anúncio", anuncios=lista_anuncios, categorias=categorias)
+    usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
+    return render_template(
+        'anuncios.html',
+        titulo="Anúncio",
+        anuncios=lista_anuncios,
+        categorias=categorias,
+        usuarios=usuarios
+    )
 
 
 # ----------- PERGUNTA / COMPRA / FAVORITOS -----------
@@ -222,16 +307,18 @@ def pergunta():
         texto      = request.form.get("texto")
 
         if not (anuncio_id and usuario_id and texto):
-            return "Preencha anuncio_id, usuario_id e texto.", 400
+            flash("Preencha anuncio_id, usuario_id e texto.")
+            return redirect(url_for("pergunta"))
 
         try:
             p = Pergunta(anuncio_id=int(anuncio_id), usuario_id=int(usuario_id), texto=texto)
             db.session.add(p)
             db.session.commit()
-            return "Pergunta enviada com sucesso!"
+            flash("Pergunta enviada com sucesso!")
         except Exception as e:
             db.session.rollback()
-            return f"Erro ao salvar pergunta: {e}", 500
+            flash(f"Erro ao salvar pergunta: {e}")
+        return redirect(url_for("pergunta"))
 
     return render_template("pergunta.html")
 
@@ -244,12 +331,14 @@ def compra():
         quantidade = request.form.get("quantidade", "1")
 
         if not (anuncio_id and usuario_id):
-            return "Preencha anuncio_id e usuario_id.", 400
+            flash("Preencha anuncio_id e usuario_id.")
+            return redirect(url_for("compra"))
 
         try:
             anuncio = Anuncio.query.get(int(anuncio_id))
             if not anuncio:
-                return "Anúncio não encontrado.", 404
+                flash("Anúncio não encontrado.")
+                return redirect(url_for("compra"))
 
             qtd   = int(quantidade)
             total = anuncio.preco * qtd
@@ -262,10 +351,11 @@ def compra():
             )
             db.session.add(c)
             db.session.commit()
-            return "Compra realizada com sucesso!"
+            flash("Compra realizada com sucesso!")
         except Exception as e:
             db.session.rollback()
-            return f"Erro ao registrar compra: {e}", 500
+            flash(f"Erro ao registrar compra: {e}")
+        return redirect(url_for("compra"))
 
     return render_template("compra.html")
 
@@ -285,7 +375,7 @@ def relCompras():
     return render_template('relCompras.html')
 
 
-# Para rodar direto com: python ecommerce.py
+# Para rodar direto com: python ecommerce.py (opcional)
 if __name__ == "__main__":
     db.create_all()
     app.run(debug=True)

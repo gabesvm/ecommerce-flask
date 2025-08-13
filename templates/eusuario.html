@@ -1,28 +1,36 @@
-<!doctype html>
-<html>
-<head> 
-  <meta charset="utf-8">
-  <title>ecommerce – Edição de Usuário</title>
-</head>
-<body>
-  <h4>Edição de {{ titulo }}</h4>
+{% extends "base.html" %}
+{% block title %}Editar Usuário · E-commerce{% endblock %}
+{% block content %}
 
-  <form action="/usuario/editar/{{ usuario.id }}" method="post">
-    <p><label for="user">Nome</label>
-    <input type="text" id="user" name="user" value="{{ usuario.nome }}"></p>
+  {% with msgs = get_flashed_messages() %}
+    {% if msgs %}
+      <div class="card" role="alert" aria-live="polite" style="border-color:#2a804a">
+        {% for m in msgs %}
+          <p class="helper">{{ m }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
-    <p><label for="email">E-mail</label>
-    <input type="text" id="email" name="email" value="{{ usuario.email }}"></p>
-
-    <p><label for="passwd">Senha</label>
-    <input type="text" id="passwd" name="passwd" value="{{ usuario.senha }}"></p>
-
-    <p><label for="end">Endereço</label>
-    <input type="text" id="end" name="end" value="{{ usuario.end }}"></p>
-
-    <p><input type="submit" value="Alterar"></p>
-  </form>
-
-  <p><a href="{{ url_for('usuario') }}">Cancelar</a></p>
-</body>
-</html>
+  <div class="card">
+    <h1>Editar Usuário</h1>
+    <form action="/usuario/editar/{{ usuario.id }}" method="post" class="form-grid" novalidate>
+      <div>
+        <label for="user">Nome</label>
+        <input type="text" id="user" name="user" value="{{ usuario.nome }}" required>
+      </div>
+      <div>
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" value="{{ usuario.email }}" required autocomplete="email">
+      </div>
+      <div class="full">
+        <label for="passwd">Senha</label>
+        <input type="password" id="passwd" name="passwd" value="{{ usuario.senha }}" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="full" style="display:flex; gap:10px;">
+        <button type="submit">Salvar alterações</button>
+        <a class="btn secondary" href="{{ url_for('usuario') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

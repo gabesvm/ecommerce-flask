@@ -1,13 +1,24 @@
-<h1>Realizar Compra</h1>
-<form method="post" action="{{ url_for('compra') }}">
-  <p><label>ID do Anúncio:</label></p>
-  <p><input type="number" name="anuncio_id" min="1" required></p>
-
-  <p><label>ID do Comprador:</label></p>
-  <p><input type="number" name="usuario_id" min="1" required></p>
-
-  <p><label>Quantidade:</label></p>
-  <p><input type="number" name="quantidade" value="1" min="1"></p>
-
-  <p><input type="submit" value="Comprar"></p>
-</form>
+{% extends "base.html" %}
+{% block title %}Compra · E-commerce{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Efetuar Compra</h1>
+    <form action="/anuncios/compra" method="post" class="form-grid">
+      <div>
+        <label for="anuncio_id">Anúncio (ID)</label>
+        <input type="number" id="anuncio_id" name="anuncio_id" required>
+      </div>
+      <div>
+        <label for="usuario_id">Usuário (ID)</label>
+        <input type="number" id="usuario_id" name="usuario_id" required>
+      </div>
+      <div>
+        <label for="quantidade">Quantidade</label>
+        <input type="number" id="quantidade" name="quantidade" min="1" value="1">
+      </div>
+      <div class="full">
+        <button type="submit">Comprar</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
