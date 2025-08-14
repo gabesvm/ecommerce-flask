@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Editar Anúncio{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Editar Anúncio</h1>
+    <form action="{{ url_for('editaranuncio', id=anuncio.id) }}" method="post" class="form-grid">
+      <div>
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" value="{{ anuncio.titulo }}" required>
+      </div>
+      <div class="full">
+        <label for="desc">Descrição</label>
+        <textarea id="desc" name="desc">{{ anuncio.descricao }}</textarea>
+      </div>
+      <div>
+        <label for="preco">Preço</label>
+        <input id="preco" name="preco" type="number" step="0.01" value="{{ anuncio.preco }}" required>
+      </div>
+      <div>
+        <label for="cat">Categoria</label>
+        <select id="cat" name="cat" required>
+          {% for c in categorias %}<option value="{{ c.id }}" {% if c.id == anuncio.categoria_id %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="uso">Usuário</label>
+        <select id="uso" name="uso" required>
+          {% for u in usuarios %}<option value="{{ u.id }}" {% if u.id == anuncio.usuario_id %}selected{% endif %}>{{ u.nome }} ({{ u.email }})</option>{% endfor %}
+        </select>
+      </div>
+      <div class="full">
+        <button type="submit">Salvar</button>
+        <a class="btn secondary" href="{{ url_for('anuncios') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

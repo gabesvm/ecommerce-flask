@@ -3,11 +3,7 @@
 {% block content %}
 
   {% with msgs = get_flashed_messages() %}
-    {% if msgs %}
-      <div class="card" role="alert">
-        {% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}
-      </div>
-    {% endif %}
+    {% if msgs %}<div class="card">{% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}</div>{% endif %}
   {% endwith %}
 
   <div class="card">
@@ -17,22 +13,14 @@
         <label for="nome">Nome do Anúncio</label>
         <input type="text" id="nome" name="nome" required>
       </div>
-
       <div class="full">
         <label for="desc">Descrição</label>
         <textarea id="desc" name="desc"></textarea>
       </div>
-
-      <div>
-        <label for="qtd">Quantidade</label>
-        <input type="number" id="qtd" name="qtd" min="0" step="1" value="0">
-      </div>
-
       <div>
         <label for="preco">Preço</label>
         <input type="number" id="preco" name="preco" step="0.01" required>
       </div>
-
       <div>
         <label for="cat">Categoria</label>
         <select id="cat" name="cat" required>
@@ -42,7 +30,6 @@
           {% endfor %}
         </select>
       </div>
-
       <div>
         <label for="uso">Usuário</label>
         <select id="uso" name="uso" required>
@@ -52,10 +39,7 @@
           {% endfor %}
         </select>
       </div>
-
-      <div class="full">
-        <button type="submit">Cadastrar</button>
-      </div>
+      <div class="full"><button type="submit">Cadastrar</button></div>
     </form>
     <p class="helper">Dica: crie um usuário e uma categoria antes.</p>
   </div>
@@ -63,19 +47,18 @@
   <div class="card">
     <h2>Lista de Anúncios</h2>
     <table class="table">
-      <thead>
-        <tr>
-          <th>Nome</th><th>Descrição</th><th>Qtd</th><th>Preço</th><th>Categoria (ID)</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Nome</th><th>Descrição</th><th>Preço</th><th>Categoria (ID)</th><th>Ações</th></tr></thead>
       <tbody>
         {% for anuncio in anuncios %}
           <tr>
-            <td>{{ anuncio.titulo or anuncio.nome }}</td>
-            <td>{{ anuncio.descricao or anuncio.desc }}</td>
-            <td>{{ anuncio.qtd if anuncio.qtd is defined else "" }}</td>
-            <td>{{ anuncio.preco }}</td>
-            <td>{{ anuncio.categoria_id or anuncio.cat_id }}</td>
+            <td>{{ anuncio.titulo }}</td>
+            <td>{{ anuncio.descricao }}</td>
+            <td>{{ '%.2f'|format(anuncio.preco) }}</td>
+            <td>{{ anuncio.categoria_id }}</td>
+            <td>
+              <a class="btn secondary" href="{{ url_for('editaranuncio', id=anuncio.id) }}">Editar</a>
+              <a class="btn danger" href="{{ url_for('deletaranuncio', id=anuncio.id) }}">Deletar</a>
+            </td>
           </tr>
         {% endfor %}
       </tbody>

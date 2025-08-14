@@ -3,11 +3,7 @@
 {% block content %}
 
   {% with msgs = get_flashed_messages() %}
-    {% if msgs %}
-      <div class="card" role="alert">
-        {% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}
-      </div>
-    {% endif %}
+    {% if msgs %}<div class="card">{% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}</div>{% endif %}
   {% endwith %}
 
   <div class="card">
@@ -17,19 +13,23 @@
         <label for="nome">Nome</label>
         <input type="text" id="nome" name="nome" required>
       </div>
-      <div class="full">
-        <button type="submit">Cadastrar</button>
-      </div>
+      <div class="full"><button type="submit">Cadastrar</button></div>
     </form>
   </div>
 
   <div class="card">
     <h2>Lista de Categorias</h2>
     <table class="table">
-      <thead><tr><th>Nome</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Ações</th></tr></thead>
       <tbody>
         {% for categoria in categorias %}
-          <tr><td>{{ categoria.nome }}</td></tr>
+          <tr>
+            <td>{{ categoria.nome }}</td>
+            <td>
+              <a class="btn secondary" href="{{ url_for('editarcategoria', id=categoria.id) }}">Editar</a>
+              <a class="btn danger" href="{{ url_for('deletarcategoria', id=categoria.id) }}">Deletar</a>
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>

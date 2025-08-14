@@ -1,24 +1,53 @@
 {% extends "base.html" %}
 {% block title %}Compra · E-commerce{% endblock %}
 {% block content %}
+
+  {% with msgs = get_flashed_messages() %}
+    {% if msgs %}<div class="card">{% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}</div>{% endif %}
+  {% endwith %}
+
   <div class="card">
     <h1>Efetuar Compra</h1>
     <form action="/anuncios/compra" method="post" class="form-grid">
       <div>
-        <label for="anuncio_id">Anúncio (ID)</label>
-        <input type="number" id="anuncio_id" name="anuncio_id" required>
+        <label for="anuncio_id">Anúncio</label>
+        <select id="anuncio_id" name="anuncio_id" required>
+          {% for a in anuncios %}<option value="{{ a.id }}">{{ a.titulo }}</option>{% endfor %}
+        </select>
       </div>
       <div>
-        <label for="usuario_id">Usuário (ID)</label>
-        <input type="number" id="usuario_id" name="usuario_id" required>
+        <label for="usuario_id">Usuário</label>
+        <select id="usuario_id" name="usuario_id" required>
+          {% for u in usuarios %}<option value="{{ u.id }}">{{ u.nome }}</option>{% endfor %}
+        </select>
       </div>
       <div>
         <label for="quantidade">Quantidade</label>
         <input type="number" id="quantidade" name="quantidade" min="1" value="1">
       </div>
-      <div class="full">
-        <button type="submit">Comprar</button>
-      </div>
+      <div class="full"><button type="submit">Comprar</button></div>
     </form>
+  </div>
+
+  <div class="card">
+    <h2>Compras</h2>
+    <table class="table">
+      <thead><tr><th>#</th><th>Anúncio</th><th>Usuário</th><th>Qtd</th><th>Total</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for c in compras %}
+          <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.anuncio.titulo }}</td>
+            <td>{{ c.usuario.nome }}</td>
+            <td>{{ c.quantidade }}</td>
+            <td>{{ '%.2f'|format(c.total) }}</td>
+            <td>
+              <a class="btn secondary" href="{{ url_for('editarcompra', id=c.id) }}">Editar</a>
+              <a class="btn danger" href="{{ url_for('deletarcompra', id=c.id) }}">Deletar</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 {% endblock %}

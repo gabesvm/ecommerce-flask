@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Editar Compra{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Editar Compra #{{ compra.id }}</h1>
+    <p class="helper">Anúncio: <b>{{ compra.anuncio.titulo }}</b> — Preço unit.: R$ {{ '%.2f'|format(compra.anuncio.preco) }}</p>
+    <form action="{{ url_for('editarcompra', id=compra.id) }}" method="post" class="form-grid">
+      <div>
+        <label for="quantidade">Quantidade</label>
+        <input id="quantidade" name="quantidade" type="number" min="1" value="{{ compra.quantidade }}">
+      </div>
+      <div class="full">
+        <button type="submit">Salvar</button>
+        <a class="btn secondary" href="{{ url_for('compra') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

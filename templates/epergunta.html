@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Editar Pergunta{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Editar Pergunta</h1>
+    <form action="{{ url_for('editarpergunta', id=perg.id) }}" method="post" class="form-grid">
+      <div class="full">
+        <label for="texto">Texto</label>
+        <textarea id="texto" name="texto" required>{{ perg.texto }}</textarea>
+      </div>
+      <div class="full">
+        <label for="resposta">Resposta</label>
+        <textarea id="resposta" name="resposta">{{ perg.resposta }}</textarea>
+      </div>
+      <div class="full">
+        <button type="submit">Salvar</button>
+        <a class="btn secondary" href="{{ url_for('pergunta') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,24 +1,53 @@
 {% extends "base.html" %}
 {% block title %}Perguntas · E-commerce{% endblock %}
 {% block content %}
+
+  {% with msgs = get_flashed_messages() %}
+    {% if msgs %}<div class="card">{% for m in msgs %}<p class="helper">{{ m }}</p>{% endfor %}</div>{% endif %}
+  {% endwith %}
+
   <div class="card">
     <h1>Enviar Pergunta</h1>
     <form action="/anuncios/pergunta" method="post" class="form-grid">
       <div>
-        <label for="anuncio_id">Anúncio (ID)</label>
-        <input type="number" id="anuncio_id" name="anuncio_id" required>
+        <label for="anuncio_id">Anúncio</label>
+        <select id="anuncio_id" name="anuncio_id" required>
+          {% for a in anuncios %}<option value="{{ a.id }}">{{ a.titulo }}</option>{% endfor %}
+        </select>
       </div>
       <div>
-        <label for="usuario_id">Usuário (ID)</label>
-        <input type="number" id="usuario_id" name="usuario_id" required>
+        <label for="usuario_id">Usuário</label>
+        <select id="usuario_id" name="usuario_id" required>
+          {% for u in usuarios %}<option value="{{ u.id }}">{{ u.nome }}</option>{% endfor %}
+        </select>
       </div>
       <div class="full">
         <label for="texto">Texto</label>
         <textarea id="texto" name="texto" required></textarea>
       </div>
-      <div class="full">
-        <button type="submit">Enviar</button>
-      </div>
+      <div class="full"><button type="submit">Enviar</button></div>
     </form>
+  </div>
+
+  <div class="card">
+    <h2>Perguntas</h2>
+    <table class="table">
+      <thead><tr><th>#</th><th>Anúncio</th><th>Usuário</th><th>Pergunta</th><th>Resposta</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for p in perguntas %}
+          <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.anuncio.titulo }}</td>
+            <td>{{ p.usuario.nome }}</td>
+            <td>{{ p.texto }}</td>
+            <td>{{ p.resposta or '-' }}</td>
+            <td>
+              <a class="btn secondary" href="{{ url_for('editarpergunta', id=p.id) }}">Editar</a>
+              <a class="btn danger" href="{{ url_for('deletarpergunta', id=p.id) }}">Deletar</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 {% endblock %}

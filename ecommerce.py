@@ -4,9 +4,9 @@ from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-change-me"  # necessário para flash()
+app.secret_key = "dev-secret-change-me"  # necessário p/ flash()
 
-# Ajuste sua conexão aqui se mudar usuário/senha/porta/banco
+# Ajuste sua conexão se mudar usuário/senha/porta/banco
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:150874bb11@localhost:3306/ecommerce'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -80,6 +80,20 @@ class Pergunta(db.Model):
 
 
 # =========================
+#   HELPERS / CONFIRMAÇÃO
+# =========================
+
+def render_confirm_delete(titulo, mensagem, action_url, cancel_url):
+    return render_template(
+        "confirm_delete.html",
+        titulo=titulo,
+        mensagem=mensagem,
+        action_url=action_url,
+        cancel_url=cancel_url
+    )
+
+
+# =========================
 #          ROTAS
 # =========================
 
@@ -96,8 +110,7 @@ def usuario():
 
 @app.route("/usuario/criar", methods=["POST"])
 def criarusuario():
-    # aceita tanto (user/email/passwd) quanto (nome/email/senha)
-    nome  = request.form.get("user")   or request.form.get("nome")
+    nome  = request.form.get("user")  or request.form.get("nome")
     email = request.form.get("email")
     senha = request.form.get("passwd") or request.form.get("senha")
 
@@ -105,9 +118,8 @@ def criarusuario():
         flash("Preencha nome, e-mail e senha.")
         return redirect(url_for("usuario"))
 
-    # e-mail único
     if Usuario.query.filter_by(email=email).first():
-        flash("Este e-mail já está cadastrado. Use outro ou edite o usuário existente.")
+        flash("Este e-mail já está cadastrado.")
         return redirect(url_for("usuario"))
 
     try:
@@ -115,26 +127,19 @@ def criarusuario():
         db.session.add(u)
         db.session.commit()
         flash("Usuário cadastrado com sucesso!")
-        return redirect(url_for("usuario"))
     except IntegrityError:
         db.session.rollback()
-        flash("E-mail já cadastrado. Por favor, use outro e-mail.")
-        return redirect(url_for("usuario"))
+        flash("E-mail já cadastrado.")
     except Exception as e:
         db.session.rollback()
         flash(f"Erro inesperado ao cadastrar usuário: {e}")
-        return redirect(url_for("usuario"))
-
-@app.route("/usuario/detalhar/<int:id>")
-def buscarusuario(id):
-    u = Usuario.query.get_or_404(id)
-    return u.nome
+    return redirect(url_for("usuario"))
 
 @app.route("/usuario/editar/<int:id>", methods=["GET", "POST"])
 def editarusuario(id):
     u = Usuario.query.get_or_404(id)
     if request.method == "POST":
-        novo_nome  = request.form.get("user")   or request.form.get("nome")
+        novo_nome  = request.form.get("user")  or request.form.get("nome")
         novo_email = request.form.get("email")
         nova_senha = request.form.get("passwd") or request.form.get("senha")
 
@@ -142,7 +147,6 @@ def editarusuario(id):
             flash("Preencha nome, e-mail e senha.")
             return redirect(url_for("editarusuario", id=id))
 
-        # se trocar e-mail, checar unicidade
         if novo_email != u.email and Usuario.query.filter_by(email=novo_email).first():
             flash("Este e-mail já está em uso por outro usuário.")
             return redirect(url_for("editarusuario", id=id))
@@ -156,18 +160,25 @@ def editarusuario(id):
             return redirect(url_for("usuario"))
         except IntegrityError:
             db.session.rollback()
-            flash("E-mail já cadastrado. Por favor, use outro e-mail.")
-            return redirect(url_for("editarusuario", id=id))
+            flash("E-mail já cadastrado.")
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao atualizar usuário: {e}")
-            return redirect(url_for("editarusuario", id=id))
+        return redirect(url_for("editarusuario", id=id))
 
     return render_template("eusuario.html", usuario=u, titulo="Usuário")
 
-@app.route("/usuario/deletar/<int:id>")
+@app.route("/usuario/deletar/<int:id>", methods=["GET", "POST"])
 def deletarusuario(id):
     u = Usuario.query.get_or_404(id)
+    if request.method == "GET":
+        return render_confirm_delete(
+            "Deletar Usuário",
+            f"Tem certeza que deseja excluir o usuário <b>{u.nome}</b>?",
+            url_for("deletarusuario", id=id),
+            url_for("usuario"),
+        )
+
     try:
         db.session.delete(u)
         db.session.commit()
@@ -200,46 +211,63 @@ def categoria():
         except IntegrityError:
             db.session.rollback()
             flash("Categoria já existe.")
-            return redirect(url_for("categoria"))
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao cadastrar categoria: {e}")
-            return redirect(url_for("categoria"))
+        return redirect(url_for("categoria"))
 
     categorias = Categoria.query.order_by(Categoria.id.desc()).all()
     return render_template("categoria.html", categorias=categorias, titulo="Categoria")
 
-# rota compatível com o caminho do professor (se usar em algum template)
-@app.route("/categoria/novo", methods=["POST"])
-def novacategoria():
-    nome_categoria = request.form.get("nome") or request.form.get("nome_categoria")
-    if not nome_categoria:
-        flash("Informe o nome da categoria.")
-        return redirect(url_for("categoria"))
-    try:
-        if Categoria.query.filter_by(nome=nome_categoria).first():
-            flash("Categoria já existe.")
+@app.route("/categoria/editar/<int:id>", methods=["GET","POST"])
+def editarcategoria(id):
+    c = Categoria.query.get_or_404(id)
+    if request.method == "POST":
+        nome = request.form.get("nome")
+        if not nome:
+            flash("Informe o nome.")
+            return redirect(url_for("editarcategoria", id=id))
+
+        if nome != c.nome and Categoria.query.filter_by(nome=nome).first():
+            flash("Já existe uma categoria com esse nome.")
+            return redirect(url_for("editarcategoria", id=id))
+
+        try:
+            c.nome = nome
+            db.session.commit()
+            flash("Categoria atualizada!")
             return redirect(url_for("categoria"))
-        cat = Categoria(nome=nome_categoria)
-        db.session.add(cat)
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar: {e}")
+            return redirect(url_for("editarcategoria", id=id))
+
+    return render_template("ecategoria.html", categoria=c, titulo="Categoria")
+
+@app.route("/categoria/deletar/<int:id>", methods=["GET","POST"])
+def deletarcategoria(id):
+    c = Categoria.query.get_or_404(id)
+    if request.method == "GET":
+        return render_confirm_delete(
+            "Deletar Categoria",
+            f"Tem certeza que deseja excluir a categoria <b>{c.nome}</b>?",
+            url_for("deletarcategoria", id=id),
+            url_for("categoria")
+        )
+    try:
+        db.session.delete(c)
         db.session.commit()
-        flash("Categoria cadastrada com sucesso!")
-        return redirect(url_for("categoria"))
-    except IntegrityError:
-        db.session.rollback()
-        flash("Categoria já existe.")
-        return redirect(url_for("categoria"))
+        flash("Categoria deletada.")
     except Exception as e:
         db.session.rollback()
-        flash(f"Erro ao cadastrar categoria: {e}")
-        return redirect(url_for("categoria"))
+        flash(f"Erro ao deletar: {e}")
+    return redirect(url_for("categoria"))
 
 
 # ----------- ANÚNCIO -----------
 @app.route("/cad/anuncios", methods=["GET", "POST"])
 def anuncios():
     if request.method == "POST":
-        # aceita nomes do professor OU do teu template
         titulo       = request.form.get("titulo")    or request.form.get("nome")
         descricao    = request.form.get("descricao") or request.form.get("desc")
         valor_str    = request.form.get("valor")     or request.form.get("preco")
@@ -250,22 +278,20 @@ def anuncios():
             flash("Preencha título/nome, preço/valor, categoria e usuário.")
             return redirect(url_for("anuncios"))
 
-        # preço
         try:
             valor = Decimal((valor_str or "0").replace(",", "."))
         except:
             flash("Preço inválido.")
             return redirect(url_for("anuncios"))
 
-        # valida FK: categoria e usuário precisam existir
         categoria = Categoria.query.get(int(categoria_id))
         if not categoria:
-            flash("Categoria não encontrada. Selecione uma categoria válida.")
+            flash("Categoria não encontrada.")
             return redirect(url_for("anuncios"))
 
         usuario = Usuario.query.get(int(usuario_id))
         if not usuario:
-            flash("Usuário não encontrado. Selecione um usuário válido.")
+            flash("Usuário não encontrado.")
             return redirect(url_for("anuncios"))
 
         try:
@@ -279,26 +305,82 @@ def anuncios():
             db.session.add(a)
             db.session.commit()
             flash("Anúncio cadastrado com sucesso!")
-            return redirect(url_for("anuncios"))
         except Exception as e:
             db.session.rollback()
             flash(f"Erro ao cadastrar anúncio: {e}")
-            return redirect(url_for("anuncios"))
+        return redirect(url_for("anuncios"))
 
-    # GET: carregar anúncios + listas para os selects
     lista_anuncios = Anuncio.query.order_by(Anuncio.id.desc()).all()
     categorias = Categoria.query.order_by(Categoria.nome.asc()).all()
     usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
-    return render_template(
-        'anuncios.html',
-        titulo="Anúncio",
-        anuncios=lista_anuncios,
-        categorias=categorias,
-        usuarios=usuarios
-    )
+    return render_template('anuncios.html', titulo="Anúncio",
+                           anuncios=lista_anuncios, categorias=categorias, usuarios=usuarios)
+
+@app.route("/anuncio/editar/<int:id>", methods=["GET","POST"])
+def editaranuncio(id):
+    a = Anuncio.query.get_or_404(id)
+    if request.method == "POST":
+        titulo    = request.form.get("nome") or request.form.get("titulo")
+        descricao = request.form.get("desc") or request.form.get("descricao")
+        preco_str = request.form.get("preco") or request.form.get("valor")
+        cat_id    = request.form.get("cat") or request.form.get("categoria_id")
+        uso_id    = request.form.get("uso") or request.form.get("usuario_id")
+
+        if not (titulo and preco_str and cat_id and uso_id):
+            flash("Preencha nome/título, preço, categoria e usuário.")
+            return redirect(url_for("editaranuncio", id=id))
+
+        try:
+            preco = Decimal((preco_str or "0").replace(",", "."))
+        except:
+            flash("Preço inválido.")
+            return redirect(url_for("editaranuncio", id=id))
+
+        categoria = Categoria.query.get(int(cat_id))
+        usuario   = Usuario.query.get(int(uso_id))
+        if not categoria or not usuario:
+            flash("Categoria ou usuário inválidos.")
+            return redirect(url_for("editaranuncio", id=id))
+
+        try:
+            a.titulo = titulo
+            a.descricao = descricao
+            a.preco = preco
+            a.categoria_id = categoria.id
+            a.usuario_id   = usuario.id
+            db.session.commit()
+            flash("Anúncio atualizado!")
+            return redirect(url_for("anuncios"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar anúncio: {e}")
+            return redirect(url_for("editaranuncio", id=id))
+
+    categorias = Categoria.query.order_by(Categoria.nome.asc()).all()
+    usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
+    return render_template("eanuncio.html", anuncio=a, categorias=categorias, usuarios=usuarios)
+
+@app.route("/anuncio/deletar/<int:id>", methods=["GET","POST"])
+def deletaranuncio(id):
+    a = Anuncio.query.get_or_404(id)
+    if request.method == "GET":
+        return render_confirm_delete(
+            "Deletar Anúncio",
+            f"Tem certeza que deseja excluir o anúncio <b>{a.titulo}</b>?",
+            url_for("deletaranuncio", id=id),
+            url_for("anuncios")
+        )
+    try:
+        db.session.delete(a)
+        db.session.commit()
+        flash("Anúncio deletado.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao deletar anúncio: {e}")
+    return redirect(url_for("anuncios"))
 
 
-# ----------- PERGUNTA / COMPRA / FAVORITOS -----------
+# ----------- PERGUNTA -----------
 @app.route("/anuncios/pergunta", methods=["GET", "POST"])
 def pergunta():
     if request.method == "POST":
@@ -310,8 +392,14 @@ def pergunta():
             flash("Preencha anuncio_id, usuario_id e texto.")
             return redirect(url_for("pergunta"))
 
+        anuncio = Anuncio.query.get(int(anuncio_id))
+        usuario = Usuario.query.get(int(usuario_id))
+        if not anuncio or not usuario:
+            flash("Anúncio ou usuário inválido.")
+            return redirect(url_for("pergunta"))
+
         try:
-            p = Pergunta(anuncio_id=int(anuncio_id), usuario_id=int(usuario_id), texto=texto)
+            p = Pergunta(anuncio_id=anuncio.id, usuario_id=usuario.id, texto=texto)
             db.session.add(p)
             db.session.commit()
             flash("Pergunta enviada com sucesso!")
@@ -320,9 +408,53 @@ def pergunta():
             flash(f"Erro ao salvar pergunta: {e}")
         return redirect(url_for("pergunta"))
 
-    return render_template("pergunta.html")
+    perguntas = Pergunta.query.order_by(Pergunta.id.desc()).all()
+    anuncios  = Anuncio.query.order_by(Anuncio.titulo.asc()).all()
+    usuarios  = Usuario.query.order_by(Usuario.nome.asc()).all()
+    return render_template("pergunta.html", perguntas=perguntas, anuncios=anuncios, usuarios=usuarios)
+
+@app.route("/pergunta/editar/<int:id>", methods=["GET","POST"])
+def editarpergunta(id):
+    p = Pergunta.query.get_or_404(id)
+    if request.method == "POST":
+        texto    = request.form.get("texto")
+        resposta = request.form.get("resposta")
+        if not texto:
+            flash("Informe o texto.")
+            return redirect(url_for("editarpergunta", id=id))
+        try:
+            p.texto = texto
+            p.resposta = resposta
+            db.session.commit()
+            flash("Pergunta atualizada!")
+            return redirect(url_for("pergunta"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar: {e}")
+            return redirect(url_for("editarpergunta", id=id))
+    return render_template("epergunta.html", perg=p)
+
+@app.route("/pergunta/deletar/<int:id>", methods=["GET","POST"])
+def deletarpergunta(id):
+    p = Pergunta.query.get_or_404(id)
+    if request.method == "GET":
+        return render_confirm_delete(
+            "Deletar Pergunta",
+            f"Tem certeza que deseja excluir esta pergunta?",
+            url_for("deletarpergunta", id=id),
+            url_for("pergunta")
+        )
+    try:
+        db.session.delete(p)
+        db.session.commit()
+        flash("Pergunta deletada.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao deletar: {e}")
+    return redirect(url_for("pergunta"))
 
 
+# ----------- COMPRA -----------
 @app.route("/anuncios/compra", methods=["GET", "POST"])
 def compra():
     if request.method == "POST":
@@ -334,21 +466,17 @@ def compra():
             flash("Preencha anuncio_id e usuario_id.")
             return redirect(url_for("compra"))
 
-        try:
-            anuncio = Anuncio.query.get(int(anuncio_id))
-            if not anuncio:
-                flash("Anúncio não encontrado.")
-                return redirect(url_for("compra"))
+        anuncio = Anuncio.query.get(int(anuncio_id))
+        usuario = Usuario.query.get(int(usuario_id))
+        if not anuncio or not usuario:
+            flash("Anúncio ou usuário inválido.")
+            return redirect(url_for("compra"))
 
+        try:
             qtd   = int(quantidade)
             total = anuncio.preco * qtd
 
-            c = Compra(
-                usuario_id=int(usuario_id),
-                anuncio_id=int(anuncio_id),
-                quantidade=qtd,
-                total=total
-            )
+            c = Compra(usuario_id=usuario.id, anuncio_id=anuncio.id, quantidade=qtd, total=total)
             db.session.add(c)
             db.session.commit()
             flash("Compra realizada com sucesso!")
@@ -357,15 +485,52 @@ def compra():
             flash(f"Erro ao registrar compra: {e}")
         return redirect(url_for("compra"))
 
-    return render_template("compra.html")
+    compras = Compra.query.order_by(Compra.id.desc()).all()
+    anuncios = Anuncio.query.order_by(Anuncio.titulo.asc()).all()
+    usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
+    return render_template("compra.html", compras=compras, anuncios=anuncios, usuarios=usuarios)
+
+@app.route("/compras/editar/<int:id>", methods=["GET","POST"])
+def editarcompra(id):
+    c = Compra.query.get_or_404(id)
+    if request.method == "POST":
+        quantidade = int(request.form.get("quantidade", "1"))
+        if quantidade < 1:
+            flash("Quantidade inválida.")
+            return redirect(url_for("editarcompra", id=id))
+        try:
+            c.quantidade = quantidade
+            c.total = c.anuncio.preco * quantidade
+            db.session.commit()
+            flash("Compra atualizada!")
+            return redirect(url_for("compra"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao atualizar: {e}")
+            return redirect(url_for("editarcompra", id=id))
+    return render_template("ecompra.html", compra=c)
+
+@app.route("/compras/deletar/<int:id>", methods=["GET","POST"])
+def deletarcompra(id):
+    c = Compra.query.get_or_404(id)
+    if request.method == "GET":
+        return render_confirm_delete(
+            "Deletar Compra",
+            f"Tem certeza que deseja excluir a compra #{c.id}?",
+            url_for("deletarcompra", id=id),
+            url_for("compra")
+        )
+    try:
+        db.session.delete(c)
+        db.session.commit()
+        flash("Compra deletada.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao deletar: {e}")
+    return redirect(url_for("compra"))
 
 
-@app.route("/anuncios/favoritos")
-def favoritos():
-    return "<h4>Favorito inserido</h4>"
-
-
-# ----------- RELATÓRIOS -----------
+# ----------- RELATÓRIOS (placeholders) -----------
 @app.route("/relatorios/vendas")
 def relVendas():
     return render_template('relVendas.html')
