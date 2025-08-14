@@ -92,6 +92,15 @@ def render_confirm_delete(titulo, mensagem, action_url, cancel_url):
         cancel_url=cancel_url
     )
 
+def get_or_create_default_category():
+    """Garante a existência da categoria 'Sem categoria' e retorna ela."""
+    default = Categoria.query.filter_by(nome="Sem categoria").first()
+    if not default:
+        default = Categoria(nome="Sem categoria")
+        db.session.add(default)
+        db.session.commit()  # precisamos do ID
+    return default
+
 
 # =========================
 #          ROTAS
@@ -247,20 +256,38 @@ def editarcategoria(id):
 @app.route("/categoria/deletar/<int:id>", methods=["GET","POST"])
 def deletarcategoria(id):
     c = Categoria.query.get_or_404(id)
+
+    # Não permitir excluir a categoria "Sem categoria"
+    if c.nome.lower().strip() == "sem categoria":
+        flash("Você não pode excluir a categoria padrão 'Sem categoria'.", "danger")
+        return redirect(url_for("categoria"))
+
     if request.method == "GET":
+        # Mensagem de confirmação já explicando o que vai acontecer
         return render_confirm_delete(
             "Deletar Categoria",
-            f"Tem certeza que deseja excluir a categoria <b>{c.nome}</b>?",
+            f"Ao excluir a categoria <b>{c.nome}</b>, os anúncios vinculados serão movidos para <b>Sem categoria</b>. Deseja continuar?",
             url_for("deletarcategoria", id=id),
             url_for("categoria")
         )
+
+    # POST: mover anúncios e excluir a categoria
     try:
+        default_cat = get_or_create_default_category()
+
+        # move todos os anúncios desta categoria para a default
+        Anuncio.query.filter_by(categoria_id=c.id).update(
+            {"categoria_id": default_cat.id}
+        )
+        db.session.commit()
+
+        # agora pode excluir a categoria
         db.session.delete(c)
         db.session.commit()
-        flash("Categoria deletada.")
+        flash("Categoria deletada. Anúncios remanescentes foram movidos para 'Sem categoria'.")
     except Exception as e:
         db.session.rollback()
-        flash(f"Erro ao deletar: {e}")
+        flash(f"Erro ao deletar categoria: {e}", "danger")
     return redirect(url_for("categoria"))
 
 
